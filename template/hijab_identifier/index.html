@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hijab Recognizer</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script
+        src="https://code.jquery.com/jquery-4.0.0.min.js"
+        integrity="sha256-OaVG6prZf4v69dPg6PhVattBXkcOWQB62pdZ3ORyrao="
+        crossorigin="anonymous"
+    ></script>
+</head>
+<body class="relative bg-gray-300 text-gray-700 w-full h-screen flex items-center justify-center">
+    <img class="absolute z-0 top-0 left-0 w-auto h-screen" src="https://images.unsplash.com/photo-1771732267112-40aa3c30bc91?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D" />
+
+    <form 
+        method="POST" 
+        enctype="multipart/form-data"
+        class="relative z-10 w-[500px] h-fit py-14 px-12 rounded-2xl bg-white/70 border border-gray-200/50 flex flex-col items-center justify-center"    
+    >
+        {% csrf_token %}
+        <div class="mb-4 w-full">
+            <h1 class="text-xl font-bold">Hijab Recognizer</h1>
+            <p class="text-gray-400 font-semibold">Upload an image to start prediction.</p>
+        </div>
+
+        {% if payload %}
+        <div class="my-4 w-full">
+            {% if payload.is_hijab %}
+            <p>✅️ The person wears hijab</p>
+            {% else %}
+            <p>❌️ The person do not wear hijab</p>
+            {% endif %}
+
+            <div class="mt-4 w-full flex gap-2 bg-gray-100/50 p-4 rounded-2xl">
+                <div class="w-1/3 flex flex-col w-full items-center">
+                    <p class="text-sm font-semibold">Confidence</p>
+                    <p class="text-sm mt-1">{{ payload.probability }}</p>
+                </div>
+                <div class="w-1/3 flex flex-col w-full items-center">
+                    <p class="text-sm font-semibold">Raw Logit</p>
+                    <p class="text-sm mt-1">{{ payload.raw_logit }}</p>
+                </div>
+                <div class="w-1/3 flex flex-col w-full items-center">
+                    <p class="text-sm font-semibold">Prediction</p>
+                    <p class="text-sm mt-1">{{ payload.predicted_class }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="mb-4 w-full">
+            {% if payload and payload.path %}
+            <img class="image-dom w-full aspect-square rounded-2xl object-cover" src="{{ payload.path }}" alt="hijab image">
+            {% else %}
+            <!-- Added an image-dom class or wrapper here so jQuery can target/replace it -->
+            <div class="placeholder-box bg-gray-100/50 border border-gray-300 w-full aspect-square rounded-2xl flex items-center justify-center overflow-clip">
+                <img class="image-dom w-full h-full object-cover hidden" alt="Preview">
+            </div>
+            {% endif %}
+        </div>
+
+        <input 
+            required 
+            class="image-input mb-4 w-full p-5 bg-gray-100/50 border border-gray-300 rounded-2xl cursor-pointer" 
+            type="file" 
+            name="file" 
+            accept="image/*" 
+        />
+        <button 
+            class="bg-sky-500 w-full text-white font-semibold h-[60px] flex items-center justify-center rounded-2xl transition hover:brightness-80 cursor-pointer" 
+            type="submit"
+        >Upload</button>
+    </form>
+
+    <script>
+        $(document).ready(() => {
+            $('.image-input').on('change', function(e) {
+                e.preventDefault()
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const imageDom = $('.image-dom');
+                        imageDom.attr('src', event.target.result);
+                        imageDom.removeClass('hidden'); // Show the image if it was hidden
+                        $('.placeholder-box').removeClass('bg-gray-400'); // Remove gray placeholder background
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
